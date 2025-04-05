@@ -2,15 +2,6 @@ import json
 import base64
 import fitz  # PyMuPDF
 import os
-import cv2
-import pytesseract
-
-pytesseract.pytesseract.tesseract_cmd = 'C:/Program Files/Tesseract-OCR/tesseract.exe'  # your path may be different
-
-def get_img_text(path):
-    imagem = cv2.imread(path)
-    texto = pytesseract.image_to_string(imagem)
-    return texto
 
 def converter_para_json(dado_str):
     # Remove a parte do markdown para ficar apenas o conteúdo JSON

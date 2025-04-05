@@ -22,49 +22,53 @@ async def root():
 
 @app.post("/extract_rg")
 async def extract_rg(file: UploadFile = File(...)):
-    print ('Entrei')
-    contents = await file.read()
-
-    with open(file.filename, 'wb') as f:
-        f.write(contents)
-    base64_image = encode_image(file.filename)
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {aux_key}"
-    }
-    prompt_rg = f"""
-Você irá receber um documento referente a um documento de identidade brasileiro que foi autorizado pelo titular a extração dos dados utilizando IA. Sua função é extrair as seguintes informações do documento e colocar em formato json: Nome, Registro Geral, data de nascimento, nome da mãe, nacionalidade, Estado, cpf, data de expedição.
-""" 
-    payload = {
-        "model": "gpt-4o-2024-08-06",
-        "messages": [
-        {
-            "role": "user",
-            "content": [
-            {
-                "type": "text",
-                "text": prompt_rg
-            },
-            {
-                "type": "image_url",
-                "image_url": {
-                "url": f"data:image/jpeg;base64,{base64_image}"
-                }
-            }
-            ]
+    try:
+        print ('Entrei')
+        contents = await file.read()
+        print ('passei do file read')
+        with open(file.filename, 'wb') as f:
+            f.write(contents)
+        print ('passei do file write')
+        base64_image = encode_image(file.filename)
+        print ('passei do base64')
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {aux_key}"
         }
-        ],
-        "max_tokens": 300
-    }
-    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-    print (response)
-    resposta = response.json()
-    resposta_str = resposta['choices'][0]['message']['content']
-    print (resposta_str)
-    json_obj = converter_para_json(resposta_str)
-    if os.path.exists(file.filename):
-        os.remove(file.filename)
+        prompt_rg = f"""
+    Você irá receber um documento referente a um documento de identidade brasileiro que foi autorizado pelo titular a extração dos dados utilizando IA. Sua função é extrair as seguintes informações do documento e colocar em formato json: Nome, Registro Geral, data de nascimento, nome da mãe, nacionalidade, Estado, cpf, data de expedição.
+    """ 
+        payload = {
+            "model": "gpt-4o-2024-08-06",
+            "messages": [
+            {
+                "role": "user",
+                "content": [
+                {
+                    "type": "text",
+                    "text": prompt_rg
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                    "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                }
+                ]
+            }
+            ],
+            "max_tokens": 300
+        }
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+
+        resposta = response.json()
+        resposta_str = resposta['choices'][0]['message']['content']
+
+        json_obj = converter_para_json(resposta_str)
+        if os.path.exists(file.filename):
+            os.remove(file.filename)
+    except Exception as e:
+        print (e)
     return json_obj
 
 

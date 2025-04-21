@@ -2,7 +2,17 @@ import json
 import base64
 import fitz  # PyMuPDF
 import os
+import re
 
+def extrair_conteudo_json(texto):
+    # Expressão regular para capturar o conteúdo entre a primeira abertura e o último fechamento de chaves
+    match = re.search(r"\{.*\}", texto, re.DOTALL)
+    if match:
+        return json.loads(match.group(0))
+    else:
+        print("Não foi possível encontrar um JSON no texto.")
+        return None
+    
 def converter_para_json(dado_str):
     # Remove a parte do markdown para ficar apenas o conteúdo JSON
     dado_str_limpo = dado_str.strip("```json\n").strip("\n```")

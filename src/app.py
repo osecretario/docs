@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Body, File, UploadFile
 from fastapi.responses import RedirectResponse
 from .helpers import get_gpt_response
-from .functions import converter_para_json
-from .llm import prompt_crm, prompt_debito, prompt_diploma, prompt_especialista, prompt_etico, prompt_rg
+from typing import Any
+from .functions import converter_para_json, extrair_conteudo_json
+from .llm import prompt_crm, prompt_debito, prompt_diploma, prompt_especialista, prompt_etico, prompt_rg, gerar_query_sql  
+from .bd import estrutura_bd
 import json
 from .functions import encode_image
 import requests
@@ -39,7 +41,7 @@ async def extract_rg(file: UploadFile = File(...)):
     Você irá receber um documento referente a um documento de identidade brasileiro que foi autorizado pelo titular a extração dos dados utilizando IA. Sua função é extrair as seguintes informações do documento e colocar em formato json: Nome, Registro Geral, data de nascimento, nome da mãe, nacionalidade, Estado, cpf, data de expedição.
     """ 
         payload = {
-            "model": "gpt-4o-2024-08-06",
+            "model": "gpt-4.1-2025-04-14",
             "messages": [
             {
                 "role": "user",
@@ -65,6 +67,9 @@ async def extract_rg(file: UploadFile = File(...)):
         resposta_str = resposta['choices'][0]['message']['content']
 
         json_obj = converter_para_json(resposta_str)
+        if json_obj == None:
+            json_obj = extrair_conteudo_json(resposta_str)
+
         if os.path.exists(file.filename):
             os.remove(file.filename)
     except Exception as e:
@@ -144,3 +149,17 @@ async def extract_debito(file: UploadFile = File(...)):
         os.remove(file.filename)
 
     return json_obj_especialidade
+
+@app.post("/extract_sql")
+async def extract_sql(payload: Any = Body(None)):
+    try:
+        pergunta = ''
+        for values in payload.values():
+            pergunta+=values
+        pergunta = f'{pergunta}'
+    except:
+        pergunta = f'{payload}'
+
+    resposta = gerar_query_sql(pergunta, estrutura_bd)
+
+    return resposta
